@@ -65,6 +65,8 @@ export function useSettlementEngine(tripId: string | null) {
                     paidBy: expenseData.paidBy,        // stored as sub-object
                     splitAmong: expenseData.splitAmong, // stored as array
                     gstIncluded: expenseData.gstIncluded,
+                    splitType: expenseData.splitType || 'equal',
+                    splitValues: expenseData.splitValues || {},
                     createdAt: serverTimestamp(),
                     updatedAt: serverTimestamp(),
                 });

@@ -15,6 +15,8 @@ import {
     Copy,
     Check,
     X,
+    Banknote,
+    CircleDollarSign,
 } from "lucide-react";
 import { useUserStore } from "@/hooks/useUserStore";
 import { useAuthStore } from "@/hooks/useAuthStore";
@@ -36,7 +38,7 @@ export default function HomePage() {
     const router = useRouter();
     const { profile, clearProfile } = useUserStore();
     const { user, loading: authLoading } = useAuthStore();
-    const { setTripName, setTripId, setCurrentUser, replaceExpenses } = useTripStore();
+    const { setTripName, setTripId, setTripMetadata, setCurrentUser, replaceExpenses } = useTripStore();
 
     // Auth guard: wait for auth to resolve, then check
     useEffect(() => {
@@ -45,8 +47,10 @@ export default function HomePage() {
 
     const [mode, setMode] = useState<"idle" | "create" | "join">("idle");
     const [tripName, setTripNameInput] = useState("");
-    const [joinCode, setJoinCode] = useState("");
+    const [currency, setCurrency] = useState("INR");
+    const [budget, setBudget] = useState("");
     const [focused, setFocused] = useState(false);
+    const [joinCode, setJoinCode] = useState("");
     const [loading, setLoading] = useState(false);
     const [showQR, setShowQR] = useState(false);
     const [createdTripId, setCreatedTripId] = useState<string | null>(null);
@@ -73,6 +77,7 @@ export default function HomePage() {
 
             setTripName(tripName.trim());
             setTripId(tripId);
+            setTripMetadata(currency, budget ? parseFloat(budget) : null);
             setCurrentUser(profile.id, profile.name);
             replaceExpenses([]);
             useTripStore.setState({ members: [currentMember] });
@@ -84,6 +89,8 @@ export default function HomePage() {
                     const { doc, setDoc, serverTimestamp } = await import("firebase/firestore");
                     await setDoc(doc(db, "trips", tripId), {
                         name: tripName.trim(),
+                        currency,
+                        budget: budget ? parseFloat(budget) : null,
                         createdAt: serverTimestamp(),
                         createdBy: profile.id,
                         members: [currentMember],
@@ -287,6 +294,37 @@ export default function HomePage() {
                                             className="flex-1 bg-transparent text-[15px] font-medium text-foreground placeholder:text-muted-foreground/40 outline-none"
                                         />
                                     </div>
+
+                                    <div className="flex gap-3">
+                                        {/* Currency Selector */}
+                                        <div className="flex-[0.4] flex items-center gap-2 bg-background border border-border/60 rounded-2xl px-4 py-3.5 relative">
+                                            <Banknote className="w-[18px] h-[18px] text-muted-foreground/50 shrink-0" strokeWidth={1.8} />
+                                            <select
+                                                value={currency}
+                                                onChange={(e) => setCurrency(e.target.value)}
+                                                className="flex-1 bg-transparent text-[15px] font-medium text-foreground outline-none appearance-none cursor-pointer"
+                                            >
+                                                <option value="INR">INR (₹)</option>
+                                                <option value="USD">USD ($)</option>
+                                                <option value="EUR">EUR (€)</option>
+                                                <option value="GBP">GBP (£)</option>
+                                                <option value="AED">AED (د.إ)</option>
+                                            </select>
+                                        </div>
+
+                                        {/* Budget Input */}
+                                        <div className="flex-1 flex items-center gap-2 bg-background border border-border/60 rounded-2xl px-4 py-3.5 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/10 transition-all">
+                                            <CircleDollarSign className="w-[18px] h-[18px] text-muted-foreground/50 shrink-0" strokeWidth={1.8} />
+                                            <input
+                                                type="number"
+                                                placeholder="Budget (Optional)"
+                                                value={budget}
+                                                onChange={(e) => setBudget(e.target.value)}
+                                                className="flex-1 bg-transparent text-[15px] font-medium text-foreground placeholder:text-muted-foreground/40 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                            />
+                                        </div>
+                                    </div>
+
                                     <button
                                         onClick={handleCreate}
                                         disabled={!tripName.trim() || loading}

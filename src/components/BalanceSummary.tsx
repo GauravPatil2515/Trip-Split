@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { formatCurrency } from "@/lib/data";
 import { TrendingDown, TrendingUp } from "lucide-react";
+import { useTripStore } from "@/hooks/useTripStore";
 
 interface BalanceSummaryProps {
     youOwe: number;
@@ -10,6 +11,7 @@ interface BalanceSummaryProps {
 }
 
 export function BalanceSummary({ youOwe, youGetBack }: BalanceSummaryProps) {
+    const { currency } = useTripStore();
     const netBalance = youGetBack - youOwe;
 
     return (
@@ -30,7 +32,7 @@ export function BalanceSummary({ youOwe, youGetBack }: BalanceSummaryProps) {
                     </span>
                 </div>
                 <p className="text-xl font-bold tabular-nums text-emerald-700">
-                    {formatCurrency(youGetBack)}
+                    {formatCurrency(youGetBack, currency)}
                 </p>
             </motion.div>
 
@@ -50,7 +52,7 @@ export function BalanceSummary({ youOwe, youGetBack }: BalanceSummaryProps) {
                     </span>
                 </div>
                 <p className="text-xl font-bold tabular-nums text-rose-600">
-                    {formatCurrency(youOwe)}
+                    {formatCurrency(youOwe, currency)}
                 </p>
             </motion.div>
 
@@ -69,7 +71,7 @@ export function BalanceSummary({ youOwe, youGetBack }: BalanceSummaryProps) {
                         }`}
                 >
                     {netBalance >= 0 ? "+" : ""}
-                    {formatCurrency(Math.abs(netBalance))}
+                    {formatCurrency(Math.abs(netBalance), currency)}
                 </span>
             </motion.div>
         </div>

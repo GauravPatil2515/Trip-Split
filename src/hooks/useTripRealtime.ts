@@ -40,11 +40,13 @@ function firestoreDocToExpense(docId: string, data: Record<string, any>): Expens
             ? data.createdAt.toDate().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })
             : (data.time ?? ''),
         gstIncluded: data.gstIncluded ?? false,
+        splitType: data.splitType ?? 'equal',
+        splitValues: data.splitValues ?? {},
     };
 }
 
 export function useTripRealtime(tripId: string | null) {
-    const { replaceExpenses, setTripName, setSyncing } = useTripStore();
+    const { replaceExpenses, setTripName, setTripMetadata, setSyncing } = useTripStore();
     // Track the last snapshot size so we only log updates, not every render
     const lastSizeRef = useRef<number>(-1);
 
@@ -86,6 +88,9 @@ export function useTripRealtime(tripId: string | null) {
                         if (snap.exists()) {
                             const data = snap.data();
                             if (data.name) setTripName(data.name);
+                            if (data.currency) {
+                                setTripMetadata(data.currency, data.budget);
+                            }
                             if (Array.isArray(data.members)) {
                                 useTripStore.setState({ members: data.members as TripMember[] });
                             }

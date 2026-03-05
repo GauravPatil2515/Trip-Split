@@ -6,6 +6,8 @@ export interface TripState {
     // Core data
     tripName: string;
     tripId: string | null;
+    currency: string;
+    budget: number | null;
     members: TripMember[];
     expenses: Expense[];
     balances: Balance[];
@@ -24,6 +26,7 @@ export interface TripState {
     // Actions
     setTripName: (name: string) => void;
     setTripId: (id: string) => void;
+    setTripMetadata: (currency: string, budget?: number | null) => void;
     setCurrentUser: (id: string, name: string) => void;
     addExpense: (expense: Omit<Expense, 'id'>) => void;
     deleteExpense: (id: string) => void;
@@ -46,6 +49,8 @@ function deriveBalances(expenses: Expense[], members: TripMember[]): Balance[] {
         amount: Math.round(e.amount * 100), // rupees -> paise
         paidById: e.paidBy.id,
         splitAmongIds: e.splitAmong.map(m => m.id),
+        splitType: e.splitType,
+        splitValues: e.splitValues,
     }));
 
     const rawBalances = calculateTripBalances(engineExpenses);
@@ -63,6 +68,8 @@ function deriveBalances(expenses: Expense[], members: TripMember[]): Balance[] {
 export const useTripStore = create<TripState>((set) => ({
     tripName: '',
     tripId: null,
+    currency: 'INR',
+    budget: null,
     members: [],
     expenses: [],
     balances: [],
@@ -75,6 +82,11 @@ export const useTripStore = create<TripState>((set) => ({
     setTripName: (tripName) => set({ tripName }),
 
     setTripId: (tripId) => set({ tripId }),
+
+    setTripMetadata: (currency, budget) => set({
+        currency,
+        budget: budget || null
+    }),
 
     setCurrentUser: (id, name) => {
         set(state => {

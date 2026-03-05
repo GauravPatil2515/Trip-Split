@@ -5,12 +5,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
     ArrowLeft,
-    IndianRupee,
     Receipt,
     Check,
     Camera,
     Info,
-    Compass
+    Compass,
+    PieChart,
+    Layers,
+    Equal,
+    Edit3,
 } from "lucide-react";
 import { AvatarChip } from "@/components/AvatarChip";
 import {
@@ -38,7 +41,7 @@ export default function AddExpensePage() {
     const router = useRouter();
     const { user, loading: authLoading } = useAuthStore();
     const { profile } = useUserStore();
-    const { members, tripId, currentUserId } = useTripStore();
+    const { members, tripId, currentUserId, currency } = useTripStore();
     const { addExpense } = useSettlementEngine(tripId);
 
     // Auth guard
@@ -55,6 +58,8 @@ export default function AddExpensePage() {
     const [selectedMembers, setSelectedMembers] = useState<Set<string>>(
         new Set(members.map((m) => m.id))
     );
+    const [splitType, setSplitType] = useState<"equal" | "percentage" | "shares" | "exact">("equal");
+    const [splitValues, setSplitValues] = useState<Record<string, number>>({});
     const [showSuccess, setShowSuccess] = useState(false);
 
     if (authLoading) {
@@ -91,7 +96,7 @@ export default function AddExpensePage() {
     const estTax = gstIncluded && numericAmount > 0 ? numericAmount - estBase : 0;
 
     const perPerson =
-        numericAmount > 0 && selectedMembers.size > 0
+        numericAmount > 0 && selectedMembers.size > 0 && splitType === "equal"
             ? Math.ceil(numericAmount / selectedMembers.size)
             : 0;
 
@@ -118,6 +123,8 @@ export default function AddExpensePage() {
                 date: "Today",
                 time: timeStr,
                 gstIncluded,
+                splitType,
+                splitValues: splitType === "equal" ? {} : splitValues,
             });
         } catch {
             // Error already handled inside the engine; UI continues
@@ -162,7 +169,7 @@ export default function AddExpensePage() {
                                 Expense Added!
                             </p>
                             <p className="text-[14px] text-muted-foreground mt-1.5 font-medium">
-                                {formatCurrency(numericAmount)} split among {selectedMembers.size} people
+                                {formatCurrency(numericAmount, currency)} split among {selectedMembers.size} people
                             </p>
                         </motion.div>
                     </motion.div>
@@ -211,7 +218,7 @@ export default function AddExpensePage() {
                     </label>
                     <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
-                            <IndianRupee className="w-6 h-6 text-primary" strokeWidth={2.5} />
+                            <span className="text-xl font-bold text-primary">{currency === 'INR' ? '₹' : (currency === 'USD' ? '$' : (currency === 'EUR' ? '€' : '¤'))}</span>
                         </div>
                         <input
                             type="number"
@@ -243,7 +250,7 @@ export default function AddExpensePage() {
                                         >
                                             <Info className="w-3 h-3" />
                                             <span>
-                                                Base: {formatCurrency(estBase)} · Est. Tax: {formatCurrency(estTax)}
+                                                Base: {formatCurrency(estBase, currency)} · Est. Tax: {formatCurrency(estTax, currency)}
                                             </span>
                                         </motion.div>
                                     )}
@@ -323,7 +330,7 @@ export default function AddExpensePage() {
                         Split with
                     </h3>
                     <AnimatePresence mode="popLayout">
-                        {numericAmount > 0 && selectedMembers.size > 0 && (
+                        {numericAmount > 0 && selectedMembers.size > 0 && splitType === "equal" && (
                             <motion.span
                                 key={perPerson}
                                 initial={{ opacity: 0, y: -10 }}
@@ -331,22 +338,61 @@ export default function AddExpensePage() {
                                 exit={{ opacity: 0, y: 10 }}
                                 className="text-[13px] font-bold text-primary tabular-nums"
                             >
-                                ₹{perPerson} each
+                                {formatCurrency(perPerson, currency)} each
                             </motion.span>
                         )}
                     </AnimatePresence>
                 </div>
 
+                <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide -mx-5 px-5">
+                    {[
+                        { id: "equal", label: "Equally", icon: Equal },
+                        { id: "percentage", label: "Percentage", icon: PieChart },
+                        { id: "shares", label: "Shares", icon: Layers },
+                        { id: "exact", label: "Exact", icon: Edit3 },
+                    ].map((type) => (
+                        <button
+                            key={type.id}
+                            onClick={() => setSplitType(type.id as "equal" | "percentage" | "shares" | "exact")}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold transition-all border ${splitType === type.id
+                                ? "bg-primary/10 border-primary text-primary"
+                                : "bg-transparent border-border text-muted-foreground"
+                                }`}
+                        >
+                            <type.icon className="w-3 h-3" />
+                            {type.label}
+                        </button>
+                    ))}
+                </div>
+
                 <div className="bg-card paper-texture border border-border/80 rounded-2xl p-5 shadow-card">
-                    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-5">
+                    <div className="space-y-5">
                         {members.map((member) => (
-                            <AvatarChip
-                                key={member.id}
-                                member={member}
-                                selected={selectedMembers.has(member.id)}
-                                onToggle={() => toggleMember(member.id)}
-                                size="lg"
-                            />
+                            <div key={member.id} className="flex items-center justify-between">
+                                <AvatarChip
+                                    member={member}
+                                    selected={selectedMembers.has(member.id)}
+                                    onToggle={() => toggleMember(member.id)}
+                                    size="md"
+                                />
+                                {selectedMembers.has(member.id) && splitType !== "equal" && (
+                                    <div className="flex items-center gap-2 bg-background border border-border/60 rounded-xl px-3 py-1.5 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/10 transition-all">
+                                        <input
+                                            type="number"
+                                            placeholder={splitType === "percentage" ? "%" : (splitType === "shares" ? "share" : "amount")}
+                                            value={splitValues[member.id] || ""}
+                                            onChange={(e) => {
+                                                const val = parseFloat(e.target.value);
+                                                setSplitValues(prev => ({ ...prev, [member.id]: isNaN(val) ? 0 : val }));
+                                            }}
+                                            className="w-16 bg-transparent text-[13px] font-bold text-foreground text-right outline-none"
+                                        />
+                                        <span className="text-[11px] font-bold text-muted-foreground/60">
+                                            {splitType === "percentage" ? "%" : (splitType === "shares" ? "sh" : currency)}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
                         ))}
                     </div>
                 </div>

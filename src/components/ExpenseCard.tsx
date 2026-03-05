@@ -7,6 +7,7 @@ import {
     CATEGORY_LABELS,
     formatCurrency,
 } from "@/lib/data";
+import { useTripStore } from "@/hooks/useTripStore";
 
 interface ExpenseCardProps {
     expense: Expense;
@@ -14,6 +15,7 @@ interface ExpenseCardProps {
 }
 
 export function ExpenseCard({ expense, index }: ExpenseCardProps) {
+    const { currency } = useTripStore();
     return (
         <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -44,7 +46,7 @@ export function ExpenseCard({ expense, index }: ExpenseCardProps) {
                         </div>
                         <div className="flex-shrink-0 text-right">
                             <p className="text-[15px] font-bold tabular-nums text-foreground">
-                                {formatCurrency(expense.amount)}
+                                {formatCurrency(expense.amount, currency)}
                             </p>
                             {expense.gstIncluded && (
                                 <span className="text-[10px] font-medium text-muted-foreground/80 uppercase tracking-wide">

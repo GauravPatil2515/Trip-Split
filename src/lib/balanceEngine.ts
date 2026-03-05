@@ -1,10 +1,17 @@
-import { splitAmountPrecisely } from './money';
+import {
+    splitAmountPrecisely,
+    splitByPercentage,
+    splitByShares
+} from './money';
+import { SplitType } from './data';
 
 export interface BaseExpense {
     id: string;
     amount: number; // in paise
     paidById: string;
     splitAmongIds: string[];
+    splitType?: SplitType;
+    splitValues?: Record<string, number>;
 }
 
 /**
@@ -19,7 +26,24 @@ export function calculateTripBalances(expenses: BaseExpense[]): Record<string, n
         if (!balances[exp.paidById]) balances[exp.paidById] = 0;
         balances[exp.paidById] += exp.amount;
 
-        const splits = splitAmountPrecisely(exp.amount, exp.splitAmongIds);
+        let splits: Record<string, number> = {};
+        const type = exp.splitType || "equal";
+
+        switch (type) {
+            case "equal":
+                splits = splitAmountPrecisely(exp.amount, exp.splitAmongIds);
+                break;
+            case "percentage":
+                splits = splitByPercentage(exp.amount, exp.splitValues || {});
+                break;
+            case "shares":
+                splits = splitByShares(exp.amount, exp.splitValues || {});
+                break;
+            case "exact":
+                // For exact, splitValues already contains the paise amounts
+                splits = exp.splitValues || {};
+                break;
+        }
 
         for (const [userId, amountOwed] of Object.entries(splits)) {
             if (!balances[userId]) balances[userId] = 0;

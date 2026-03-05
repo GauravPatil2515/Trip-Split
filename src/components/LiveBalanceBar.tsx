@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatCurrency } from "@/lib/data";
+import { useTripStore } from "@/hooks/useTripStore";
 import { ChevronDown, RefreshCw } from "lucide-react";
 
 interface LiveBalanceBarProps {
@@ -20,6 +21,7 @@ export function LiveBalanceBar({
     youOwe,
     youGetBack,
 }: LiveBalanceBarProps) {
+    const { currency } = useTripStore();
     const [expanded, setExpanded] = useState(false);
     const [syncing, setSyncing] = useState(false);
 
@@ -53,7 +55,7 @@ export function LiveBalanceBar({
                                 }`}
                         >
                             {netBalance >= 0 ? "+" : ""}
-                            {formatCurrency(Math.abs(netBalance))}
+                            {formatCurrency(Math.abs(netBalance), currency)}
                         </span>
                     </motion.div>
                 </div>
@@ -95,7 +97,7 @@ export function LiveBalanceBar({
                                         Total Trip Spend
                                     </p>
                                     <p className="text-[17px] font-semibold tabular-nums text-foreground">
-                                        {formatCurrency(totalSpent)}
+                                        {formatCurrency(totalSpent, currency)}
                                     </p>
                                 </div>
 
@@ -104,7 +106,7 @@ export function LiveBalanceBar({
                                         You Paid
                                     </p>
                                     <p className="text-[17px] font-semibold tabular-nums text-foreground">
-                                        {formatCurrency(youPaid)}
+                                        {formatCurrency(youPaid, currency)}
                                     </p>
                                 </div>
 
@@ -113,7 +115,7 @@ export function LiveBalanceBar({
                                         You Get Back
                                     </p>
                                     <p className="text-[18px] font-bold tabular-nums text-success">
-                                        {formatCurrency(youGetBack)}
+                                        {formatCurrency(youGetBack, currency)}
                                     </p>
                                 </div>
 
@@ -122,7 +124,7 @@ export function LiveBalanceBar({
                                         You Owe
                                     </p>
                                     <p className="text-[18px] font-bold tabular-nums text-danger">
-                                        {formatCurrency(youOwe)}
+                                        {formatCurrency(youOwe, currency)}
                                     </p>
                                 </div>
 

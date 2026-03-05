@@ -24,12 +24,13 @@ import { useTripStore } from "@/hooks/useTripStore";
 import { useSettlementEngine } from "@/hooks/useSettlementEngine";
 import { useAuthStore } from "@/hooks/useAuthStore";
 import { useUserStore } from "@/hooks/useUserStore";
+import { generateUPIIntent } from "@/lib/upi";
 
 export default function SettlementPage() {
     const router = useRouter();
     const { user, loading: authLoading } = useAuthStore();
     const { profile } = useUserStore();
-    const { balances, settlementStates, settlementRefs, markSettlement, setSettlementRef, tripId } = useTripStore();
+    const { balances, settlementStates, settlementRefs, markSettlement, setSettlementRef, tripId, currency } = useTripStore();
     const { confirmSettlement } = useSettlementEngine(tripId);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [activeInputId, setActiveInputId] = useState<string | null>(null);
@@ -144,7 +145,8 @@ export default function SettlementPage() {
                                 {formatCurrency(
                                     settlements
                                         .filter((s) => settlementStates[s.id] !== "settled")
-                                        .reduce((sum, s) => sum + s.amount, 0)
+                                        .reduce((sum, s) => sum + s.amount, 0),
+                                    currency
                                 )}
                             </p>
                         </div>
@@ -272,7 +274,7 @@ export default function SettlementPage() {
                                             </span>
                                         </div>
                                         <p className="text-[22px] font-extrabold tabular-nums text-foreground mt-0.5">
-                                            {formatCurrency(settlement.amount)}
+                                            {formatCurrency(settlement.amount, currency)}
                                         </p>
                                     </div>
 
@@ -371,7 +373,7 @@ export default function SettlementPage() {
                                                 <div className="space-y-2">
                                                     <div className="flex justify-between text-[14px]">
                                                         <span className="text-muted-foreground">Amount</span>
-                                                        <span className="font-bold tabular-nums text-foreground">{formatCurrency(settlement.amount)}</span>
+                                                        <span className="font-bold tabular-nums text-foreground">{formatCurrency(settlement.amount, currency)}</span>
                                                     </div>
                                                     <div className="flex justify-between text-[14px]">
                                                         <span className="text-muted-foreground">From</span>
@@ -406,7 +408,13 @@ export default function SettlementPage() {
 
                                                         {/* UPI Deep Link */}
                                                         <a
-                                                            href={`upi://pay?pa=${encodeURIComponent(settlement.to.upiId)}&pn=${encodeURIComponent(settlement.to.name)}&am=${settlement.amount}&tn=TripLedger+Settlement&cu=INR`}
+                                                            href={generateUPIIntent({
+                                                                upiId: settlement.to.upiId!,
+                                                                name: settlement.to.name,
+                                                                amount: settlement.amount,
+                                                                note: "TripLedger Settlement",
+                                                                currency: currency
+                                                            })}
                                                             className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-primary text-primary-foreground text-[14px] font-bold shadow-card btn-press"
                                                         >
                                                             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
