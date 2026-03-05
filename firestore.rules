@@ -1,0 +1,121 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// TripLedger — Firestore Security Rules
+// ─────────────────────────────────────────────────────────────────────────────
+// Paste these rules into:
+//   Firebase Console → Firestore Database → Rules tab
+//
+// Data model:
+//   trips/{tripId}                         — trip metadata + members array
+//   trips/{tripId}/expenses/{expenseId}    — individual expense documents
+//   trips/{tripId}/settlements/{sId}       — settlement confirmation records
+//   trips/{tripId}/metadata/status         — archived flag, etc.
+// ─────────────────────────────────────────────────────────────────────────────
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ────────────────────────────────────────────────────
+
+    /** Returns true if the caller is authenticated. */
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    /** Returns true if the caller's UID appears in the trip's members list. */
+    function isTripMember(tripId) {
+      let trip = get(/databases/$(database)/documents/trips/$(tripId));
+      return isAuth()
+        && trip.data.members.hasAny([{ id: request.auth.uid }]);
+    }
+
+    /** Returns true if the trip is NOT archived (or the metadata doc doesn't exist yet). */
+    function tripIsActive(tripId) {
+      let meta = get(/databases/$(database)/documents/trips/$(tripId)/metadata/status);
+      return !meta.exists || meta.data.archived != true;
+    }
+
+    /** Returns true if the incoming paise amount is a positive integer. */
+    function validAmount(data) {
+      return data.amount is int && data.amount > 0;
+    }
+
+    // ── trips/{tripId} ──────────────────────────────────────────────────────
+    match /trips/{tripId} {
+
+      // Any authenticated member of the trip can read its metadata
+      allow read: if isTripMember(tripId);
+
+      // Only the trip creator can create or update trip metadata.
+      // Once set, createdBy cannot be changed.
+      allow create: if isAuth()
+        && request.resource.data.createdBy == request.auth.uid;
+
+      allow update: if isTripMember(tripId)
+        && request.resource.data.createdBy == resource.data.createdBy; // immutable
+
+      // Nobody can delete a trip document via the client
+      allow delete: if false;
+
+      // ── expenses sub-collection ───────────────────────────────────────────
+      match /expenses/{expenseId} {
+
+        allow read: if isTripMember(tripId);
+
+        // Add expense — trip must be active; amount must be valid paise integer
+        allow create: if isTripMember(tripId)
+          && tripIsActive(tripId)
+          && validAmount(request.resource.data)
+          && request.resource.data.paidBy.id is string
+          && request.resource.data.splitAmong is list
+          && request.resource.data.splitAmong.size() > 0;
+
+        // Edit expense — only the original payer OR trip creator may edit
+        allow update: if isTripMember(tripId)
+          && tripIsActive(tripId)
+          && validAmount(request.resource.data)
+          && (
+            resource.data.paidBy.id == request.auth.uid
+            || get(/databases/$(database)/documents/trips/$(tripId)).data.createdBy == request.auth.uid
+          );
+
+        // Delete — same as update permission
+        allow delete: if isTripMember(tripId)
+          && tripIsActive(tripId)
+          && (
+            resource.data.paidBy.id == request.auth.uid
+            || get(/databases/$(database)/documents/trips/$(tripId)).data.createdBy == request.auth.uid
+          );
+      }
+
+      // ── settlements sub-collection ────────────────────────────────────────
+      match /settlements/{settlementId} {
+
+        allow read: if isTripMember(tripId);
+
+        // Anyone in the trip can create or confirm a settlement record
+        allow create, update: if isTripMember(tripId)
+          && tripIsActive(tripId)
+          && request.resource.data.status in ['pending', 'confirmed'];
+
+        allow delete: if false;
+      }
+
+      // ── metadata/status document ──────────────────────────────────────────
+      match /metadata/status {
+
+        allow read: if isTripMember(tripId);
+
+        // Only trip creator can archive a trip
+        allow write: if isAuth()
+          && get(/databases/$(database)/documents/trips/$(tripId)).data.createdBy == request.auth.uid;
+      }
+    }
+
+    // Block all other paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

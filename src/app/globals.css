@@ -2,26 +2,141 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 80 20% 97%;
+    --foreground: 180 10% 15%;
+    --card: 60 20% 99%;
+    --card-foreground: 180 10% 15%;
+    --popover: 60 20% 99%;
+    --popover-foreground: 180 10% 15%;
+    --primary: 174 78% 26%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 80 10% 93%;
+    --secondary-foreground: 180 10% 15%;
+    --muted: 80 10% 93%;
+    --muted-foreground: 180 4% 46%;
+    --accent: 43 96% 50%;
+    --accent-foreground: 30 60% 12%;
+    --destructive: 0 72% 41%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 64% 24%;
+    --success-foreground: 0 0% 100%;
+    --amber: 43 96% 50%;
+    --amber-foreground: 30 60% 12%;
+    --border: 80 10% 90%;
+    --input: 80 10% 90%;
+    --ring: 174 78% 26%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 210 11% 10%;
+    --foreground: 0 0% 95%;
+    --card: 210 11% 12%;
+    --card-foreground: 0 0% 95%;
+    --popover: 210 11% 12%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 174 60% 41%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 8% 18%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 210 8% 18%;
+    --muted-foreground: 210 6% 65%;
+    --accent: 43 85% 55%;
+    --accent-foreground: 30 60% 12%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 50% 35%;
+    --success-foreground: 0 0% 100%;
+    --amber: 43 85% 55%;
+    --amber-foreground: 30 60% 12%;
+    --border: 210 8% 20%;
+    --input: 210 8% 20%;
+    --ring: 174 60% 41%;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Paper texture for cards */
+  .paper-texture {
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(255, 255, 255, 0.6) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(245, 158, 11, 0.02) 0%, transparent 50%);
+  }
+
+  /* Glass effect */
+  .glass {
+    backdrop-filter: blur(12px) saturate(1.5);
+    -webkit-backdrop-filter: blur(12px) saturate(1.5);
+    background: rgba(255, 255, 255, 0.78);
+  }
+
+  /* Press depth effect for buttons */
+  .btn-press {
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+
+  .btn-press:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Safe area for mobile */
+  .safe-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-top {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+
+  /* Smooth scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Grain overlay */
+  .grain-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opactity='0.05'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    mix-blend-mode: overlay;
+  }
+
+  .dark .grain-overlay {
+    opacity: 0.06;
+    mix-blend-mode: overlay;
   }
 }
