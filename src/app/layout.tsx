@@ -1,21 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Sora, DM_Sans } from "next/font/google";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
-
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/components/AuthProvider";
 
+const sora = Sora({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+  weight: ["600", "700", "800"],
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+  axes: ["opsz"],
+  weight: ["400", "500", "700"],
+});
+
 export const metadata: Metadata = {
-  title: "TripLedger — Split Expenses, Not Friendships",
+  title: "TripSplit — Travel. Split. Flex. 🌍",
   description:
-    "A premium expense management app for group trips. Track, split, and settle expenses with your travel buddies.",
+    "The aesthetic trip expense tracker for Gen Z. Split costs, settle instantly, and share your trip wrapped.",
   manifest: "/manifest.json",
 };
 
@@ -24,26 +31,24 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#0F766E",
+  themeColor: "#090910",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans`}>
+      <body className={`${sora.variable} ${dmSans.variable}`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <AuthProvider>
-            <div className="mx-auto min-h-dvh max-w-[430px] bg-background relative isolate">
-              <div className="grain-overlay pointer-events-none" />
+            <div className="mx-auto min-h-dvh max-w-[430px] bg-background relative isolate overflow-x-hidden">
+              <div className="grain-overlay" />
               {children}
             </div>
           </AuthProvider>
